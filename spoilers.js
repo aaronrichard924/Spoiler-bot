@@ -1,13 +1,13 @@
-\const fs = require("fs");
+const fs = require("fs");
 
 const SEEN_FILE = "seen.json";
 
-// Correct spoiler feed (NOT set-based, NOT Bloomburrow-prone)
-const SCRYFALL_URL =
-  "https://api.scryfall.com/cards/search?q=game:paper&order=spoiled&dir=desc";
-
+// Safer broad feed (we filter ourselves)
 async function getLatestCards() {
-  const res = await fetch(SCRYFALL_URL);
+  const res = await fetch(
+    "https://api.scryfall.com/cards/search?q=game:paper&order=released&dir=desc"
+  );
+
   const data = await res.json();
   return data.data || [];
 }
@@ -49,8 +49,15 @@ async function run() {
 
   let newCount = 0;
 
+  // 🔥 IMPORTANT FIX: time gate prevents old set spam
+  const cutoff = Date.now() - 1000 * 60 * 60 * 24; // last 24 hours
+
   for (const card of sorted) {
-    if (!seen.has(card.id)) {
+    const released = card.released_at
+      ? new Date(card.released_at).getTime()
+      : 0;
+
+    if (!seen.has(card.id) && released >= cutoff) {
       console.log("New card:", card.name);
 
       await postToDiscord(card);
