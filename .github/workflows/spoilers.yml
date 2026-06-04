@@ -35,6 +35,6 @@ jobs:
 
           git add seen.json
 
-          git diff --staged --quiet || git commit -m "Update seen spoilers"
+          git commit -m "update seen spoilers" || echo "no changes"
 
           git push
