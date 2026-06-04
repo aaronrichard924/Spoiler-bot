@@ -1,10 +1,10 @@
-const fs = require("fs");
+\const fs = require("fs");
 
 const SEEN_FILE = "seen.json";
 
-// Main spoiler feed (this is the correct source)
+// Correct spoiler feed (NOT set-based, NOT Bloomburrow-prone)
 const SCRYFALL_URL =
-  "https://api.scryfall.com/cards/search?q=is%3Aspoiler&order=spoiled&dir=desc";
+  "https://api.scryfall.com/cards/search?q=game:paper&order=spoiled&dir=desc";
 
 async function getLatestCards() {
   const res = await fetch(SCRYFALL_URL);
@@ -14,6 +14,7 @@ async function getLatestCards() {
 
 function loadSeen() {
   if (!fs.existsSync(SEEN_FILE)) return new Set();
+
   try {
     return new Set(JSON.parse(fs.readFileSync(SEEN_FILE, "utf8")));
   } catch {
@@ -42,12 +43,8 @@ async function run() {
   const seen = loadSeen();
   const cards = await getLatestCards();
 
-  if (!Array.isArray(cards)) {
-    console.log("No cards returned from Scryfall.");
-    return;
-  }
+  if (!Array.isArray(cards)) return;
 
-  // Process oldest → newest so Discord order makes sense
   const sorted = cards.slice().reverse();
 
   let newCount = 0;
