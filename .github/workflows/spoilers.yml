@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -22,3 +24,14 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: node spoilers.js
+
+      - name: Commit updated state
+        run: |
+          git config --global user.name "Spoiler Bot"
+          git config --global user.email "bot@users.noreply.github.com"
+
+          git add seen.json .initialized
+
+          git diff --staged --quiet || git commit -m "Update spoiler state"
+
+          git push
