@@ -1,9 +1,12 @@
 const fs = require("fs");
 
 const SEEN_FILE = "seen.json";
-
+const FIRST_RUN_FILE = ".initialized";
 async function getLatestCards() {
-  const res = await fetch("https://api.scryfall.com/cards/search?q=set:one OR set:otj OR set:blb&order=spoiled&dir=desc");
+  const res = await fetch(
+    "https://api.scryfall.com/cards/search?q=is%3Aspoiler&order=spoiled&dir=desc"
+  );
+
   const data = await res.json();
   return data.data || [];
 }
@@ -31,11 +34,27 @@ async function postToDiscord(card) {
   });
 }
 
+
+
 async function run() {
   const seen = loadSeen();
   const cards = await getLatestCards();
 
-  for (const card of cards) {
+  const firstRun = !fs.existsSync(FIRST_RUN_FILE);
+
+  if (firstRun) {
+    for (const card of cards) {
+      seen.add(card.id);
+    }
+
+    saveSeen(seen);
+    fs.writeFileSync(FIRST_RUN_FILE, "true");
+
+    console.log("Initialized without posting old spoilers.");
+    return;
+  }
+
+  for (const card of cards.slice().reverse()) {
     if (!seen.has(card.id)) {
       console.log("New card:", card.name);
 
